@@ -9,6 +9,7 @@ import urllib
 import httplib
 import syslog
 import base64
+import threading
 #import MultipartPostHandler
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
@@ -97,19 +98,55 @@ key = "/this/is/a/key"
 key = "testKey"
 msg = "YAY!!! " + time.asctime()
 
-#for i in range(10):
-t0 = time.time()
-msg = "YAY!!! " + time.asctime()
-ret = postMsg(bUrl, key, msg, token, project_id, host, port)
-#sys.exit()
-#time.sleep(1)
-ret = getMsg(bUrl, key, token)
-print "get returns:  " + str(ret)
-a = json.loads(ret)
-msg_id = a['id']
-print "retrieved msg:  " + msg
+def doAll(bUrl, key, msg_id, token, project_id, host, port):
+  t0 = time.time()
+  msg = "YAY!!! " + time.asctime()
+  ret = postMsg(bUrl, key, msg, token, project_id, host, port)
+  ret = getMsg(bUrl, key, token)
+  a = json.loads(ret)
+  msg_id = a['id']
+  x = delMsg(bUrl, key, msg_id, token, project_id, host, port)
+  dt = time.time() - t0
 
-x = delMsg(bUrl, key, msg_id, token, project_id, host, port)
-dt = time.time() - t0
-print "Time for 3 basic ops:  " + str(dt)
-print "Result of delete message:  " + str(x)
+class myThread (threading.Thread):
+  def __init__(self, threadID, name, counter, bUrl, key, msg_id, token, project_id, host, port):
+    threading.Thread.__init__(self)
+    self.threadID = threadID
+    self.name = name
+    self.bUrl = bUrl
+    self.key  = key
+    self.msg_id =  msg_id
+    self.token =  token
+    self.project_id =  project_id
+    self.host = host
+    self.port = port
+    self.counter = counter
+
+  def run(self):
+    for i in range(100):
+      doAll(self.bUrl, self.key, self.msg_id, self.token, self.project_id, self.host, self.port) 
+
+j = 0
+tTot = 0.0
+ta = []
+t0 = time.time()
+for i in range(100):
+  msg_id = "notset"
+  #ta.append(thread.start_new_thread(doAll, (bUrl, key, msg_id, token, project_id, host, port, ) ))
+  th = myThread(i, "Thread-"+str(i),0, bUrl, key, msg_id, token, project_id, host, port)
+  th.start()
+  ta.append(th)
+  #doAll(bUrl, key, msg_id, token, project_id, host, port)
+  j = j + 1
+  #doAll(bUrl, key, msg_id, token, project_id, host, port)
+  #print "Time for 3 basic ops:  " + str(dt)
+  #tTot = tTot + dt
+
+print str(ta)
+for th in ta:
+  print str(th)
+  th.join()
+
+tTot = time.time() - t0
+tAvg = tTot/(300.0*j)
+print "Average time per op:  " + str(tAvg)
