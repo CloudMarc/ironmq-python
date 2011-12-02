@@ -11,8 +11,8 @@ import syslog
 import base64
 import threading
 #import MultipartPostHandler
-from poster.encode import multipart_encode
-from poster.streaminghttp import register_openers
+#from poster.encode import multipart_encode
+#from poster.streaminghttp import register_openers
 
 def handler(signum, frame):
   print 'Signal handler called with signal', signum
