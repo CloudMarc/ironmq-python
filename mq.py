@@ -100,7 +100,7 @@ msg = "YAY FROM SimpleDeployer!!! " + time.asctime()
 
 def doAll(bUrl, key, msg_id, token, project_id, host, port):
   t0 = time.time()
-  msg = "YAY!!! " + time.asctime()
+  msg = "YAY FROM SimpleDeployer!!! " + time.asctime()
   ret = postMsg(bUrl, key, msg, token, project_id, host, port)
   ret = getMsg(bUrl, key, token)
   a = json.loads(ret)
