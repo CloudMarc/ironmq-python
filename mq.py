@@ -96,7 +96,7 @@ def delMsg(baseUrl, key, msg_id, token, project_id, host, port):
 bUrl = baseUrl(host, port, version, project_id)
 key = "/this/is/a/key"
 key = "testKey"
-msg = "YAY!!! " + time.asctime()
+msg = "YAY FROM SimpleDeployer!!! " + time.asctime()
 
 def doAll(bUrl, key, msg_id, token, project_id, host, port):
   t0 = time.time()
