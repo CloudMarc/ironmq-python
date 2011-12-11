@@ -28,7 +28,8 @@ project_id = "4ed16540cddb131dae000004"
 # http://mq-aws-us-east-1.iron.io/ping
 # host= "mq-aws-us-east-1.iron.io"
 #host= "174.129.54.171"
-host = "10.196.125.22"
+#host = "10.196.125.22"
+host = "10.102.65.180"
 port = "8081"
 version = "1"
 #project_id = "4e71843298ea9b6b9f000004"
@@ -150,7 +151,7 @@ tTot = 0.0
 ta = []
 t0 = time.time()
 runcount = 100
-nThreads = 10
+nThreads = 20
 for i in range(nThreads):
   msg_id = "notset"
   th = myThread(i, "Thread-"+str(i),0, bUrl, key, msg_id, token, project_id, host, port, runcount)
