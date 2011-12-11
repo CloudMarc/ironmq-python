@@ -150,7 +150,7 @@ j = 0
 tTot = 0.0
 ta = []
 t0 = time.time()
-runcount = 100
+runcount = 10000
 nThreads = 20
 for i in range(nThreads):
   msg_id = "notset"
