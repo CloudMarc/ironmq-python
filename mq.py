@@ -136,7 +136,7 @@ class myThread (threading.Thread):
         doAll(self.bUrl, self.key, self.msg_id, self.token, self.project_id, self.host, self.port) 
         dt = time.time() - t0
         success = success + 1
-        print '+' + str(dt)
+        print str(time.time()) +  ' + ' + str(dt) 
       except:
         print "Unexpected error: " , sys.exc_info()[0]
         failure = failure + 1
@@ -149,12 +149,13 @@ tTot = 0.0
 ta = []
 t0 = time.time()
 runcount = 10
-for i in range(runcount):
+nThreads = 2
+for i in range(nThreads):
   msg_id = "notset"
   th = myThread(i, "Thread-"+str(i),0, bUrl, key, msg_id, token, project_id, host, port, runcount)
   th.start()
   ta.append(th)
-  j = j + runcount
+  j = j + 1
 
 #print str(ta)
 for th in ta:
@@ -162,5 +163,5 @@ for th in ta:
   th.join()
 
 tTot = time.time() - t0
-tAvg = tTot/(1.0*j*runcount)
+tAvg = tTot/(1.0*nThreads*runcount)
 print "Average time per op:  " + str(tAvg)
