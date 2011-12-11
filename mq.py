@@ -40,7 +40,7 @@ def baseUrl(host, port, version, project_id):
 #GET /projects/:project_id/queues/:queue_name/messages - get message from queue
 def getMsg(baseUrl, key, token):
   url = baseUrl+'/queues/'+key + "/messages?oauth="+token
-  print "About to get:  "+ url
+  #print "About to get:  "+ url
   req = urllib2.Request(url, None, {})
   ret = urllib2.urlopen(req)
   s = ret.read()
@@ -54,19 +54,19 @@ def postMsg(baseUrl, key, msg, token, project_id, host, port):
   #version = "1"
   #conn = httplib.HTTPConnection(host + ":" + port)
   conn = httplib.HTTPConnection(host, port)
-  print "msg = " + msg
+  #print "msg = " + msg
   data = json.dumps({"body" : msg})
   headers = {}
   headers['Content-Type'] = "application/json"
   dataLen = len(data)
   headers['Content-Length'] = dataLen
   uri = '/'+version+'/projects/'+project_id + '/queues/'+key+'/messages?oauth='+token
-  print "POST uri = " + uri
+  #print "POST uri = " + uri
   conn.request("POST", uri, data, headers)
   response = conn.getresponse()
-  print response.status, response.reason
+  #print response.status, response.reason
   res = response.read()
-  print "post msg response data:  " + res
+  #print "post msg response data:  " + res
   conn.close()
   return res
 
@@ -82,14 +82,14 @@ def delMsg(baseUrl, key, msg_id, token, project_id, host, port):
   #headers['Content-Type'] = "application/json"
   #dataLen = len(data)
   #headers['Content-Length'] = dataLen
-  print "DELETE, msg_id = "+ str(msg_id)
+  #print "DELETE, msg_id = "+ str(msg_id)
   uri = "/"+version+"/projects/" + project_id + "/queues/testKey/messages/"+str(msg_id)+"?oauth="+token
-  print "DELETE, uri = " + uri
+  #print "DELETE, uri = " + uri
   conn.request("DELETE", uri)
   response = conn.getresponse()
-  print "Past getresponse...",response.status, response.reason
+  #print "Past getresponse...",response.status, response.reason
   res = response.read()
-  print "post msg response data:  " + res
+  #print "post msg response data:  " + res
   conn.close()
   return res
 
@@ -99,17 +99,21 @@ key = "testKey"
 msg = "YAY FROM SimpleDeployer!!! " + time.asctime()
 
 def doAll(bUrl, key, msg_id, token, project_id, host, port):
-  t0 = time.time()
-  msg = "YAY FROM SimpleDeployer!!! " + time.asctime()
-  ret = postMsg(bUrl, key, msg, token, project_id, host, port)
-  ret = getMsg(bUrl, key, token)
-  a = json.loads(ret)
-  msg_id = a['id']
-  x = delMsg(bUrl, key, msg_id, token, project_id, host, port)
-  dt = time.time() - t0
+    # Note that we're posting 3, getting 2, and marking 1 as done - leak
+    msg = "YAY FROM SimpleDeployer!!! " + time.asctime()
+    ret = postMsg(bUrl, key, msg, token, project_id, host, port)
+    msg = time.asctime() + "YAY2 FROM SimpleDeployer!!! " 
+    ret = postMsg(bUrl, key, msg, token, project_id, host, port)
+    msg = time.asctime() + "YAY3 FROM SimpleDeployer!!! " 
+    ret = postMsg(bUrl, key, msg, token, project_id, host, port)
+    ret = getMsg(bUrl, key, token)
+    ret = getMsg(bUrl, key, token)
+    a = json.loads(ret)
+    msg_id = a['id']
+    x = delMsg(bUrl, key, msg_id, token, project_id, host, port)
 
 class myThread (threading.Thread):
-  def __init__(self, threadID, name, counter, bUrl, key, msg_id, token, project_id, host, port):
+  def __init__(self, threadID, name, counter, bUrl, key, msg_id, token, project_id, host, port, runcount):
     threading.Thread.__init__(self)
     self.threadID = threadID
     self.name = name
@@ -121,32 +125,42 @@ class myThread (threading.Thread):
     self.host = host
     self.port = port
     self.counter = counter
+    self.runcount = runcount
 
   def run(self):
-    for i in range(100):
-      doAll(self.bUrl, self.key, self.msg_id, self.token, self.project_id, self.host, self.port) 
+    success = 0
+    failure = 0
+    for i in range(self.runcount):
+      try:
+        t0 = time.time()
+        doAll(self.bUrl, self.key, self.msg_id, self.token, self.project_id, self.host, self.port) 
+        dt = time.time() - t0
+        success = success + 1
+        print '+' + str(dt)
+      except:
+        print "Unexpected error: " , sys.exc_info()[0]
+        failure = failure + 1
+        dt = time.time() - t0
+        print '-' + str(dt)
+    #return success
 
 j = 0
 tTot = 0.0
 ta = []
 t0 = time.time()
-for i in range(100):
+runcount = 10
+for i in range(runcount):
   msg_id = "notset"
-  #ta.append(thread.start_new_thread(doAll, (bUrl, key, msg_id, token, project_id, host, port, ) ))
-  th = myThread(i, "Thread-"+str(i),0, bUrl, key, msg_id, token, project_id, host, port)
+  th = myThread(i, "Thread-"+str(i),0, bUrl, key, msg_id, token, project_id, host, port, runcount)
   th.start()
   ta.append(th)
-  #doAll(bUrl, key, msg_id, token, project_id, host, port)
-  j = j + 1
-  #doAll(bUrl, key, msg_id, token, project_id, host, port)
-  #print "Time for 3 basic ops:  " + str(dt)
-  #tTot = tTot + dt
+  j = j + runcount
 
-print str(ta)
+#print str(ta)
 for th in ta:
   print str(th)
   th.join()
 
 tTot = time.time() - t0
-tAvg = tTot/(300.0*j)
+tAvg = tTot/(1.0*j*runcount)
 print "Average time per op:  " + str(tAvg)
