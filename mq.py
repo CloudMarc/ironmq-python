@@ -156,8 +156,8 @@ j = 0
 tTot = 0.0
 ta = []
 t0 = time.time()
-runcount = 20
-nThreads = 4
+runcount = 20000
+nThreads = 20 
 for i in range(nThreads):
   msg_id = "notset"
   th = myThread(i, "Thread-"+str(i),0, bUrl, key, msg_id, token, project_id, host, port, runcount)
