@@ -10,6 +10,7 @@ import httplib
 import syslog
 import base64
 import threading
+import redis
 #import MultipartPostHandler
 #from poster.encode import multipart_encode
 #from poster.streaminghttp import register_openers
@@ -28,8 +29,8 @@ project_id = "4ed16540cddb131dae000004"
 # http://mq-aws-us-east-1.iron.io/ping
 # host= "mq-aws-us-east-1.iron.io"
 #host= "174.129.54.171"
-#host = "10.196.125.22"
-host = "10.102.65.180"
+host = "10.196.125.22"
+#host = "10.102.65.180"
 port = "8081"
 version = "1"
 #project_id = "4e71843298ea9b6b9f000004"
@@ -128,6 +129,7 @@ class myThread (threading.Thread):
     self.port = port
     self.counter = counter
     self.runcount = runcount
+    self.redis = redis.StrictRedis(host='10.38.6.22', port=6379, db=0)
 
   def run(self):
     success = 0
@@ -136,22 +138,26 @@ class myThread (threading.Thread):
       try:
         t0 = time.time()
         doAll(self.bUrl, self.key, self.msg_id, self.token, self.project_id, self.host, self.port) 
-        dt = time.time() - t0
+        dts = "%.20f" % (time.time() - t0)
         success = success + 1
-        print str(time.time()) +  ' + ' + str(dt) 
+        ts = "%.20f" % time.time()
+        print ts +  ' + ' + dts
+        self.redis.zadd("bench::", ts, '+'+dts)
       except:
         print "Unexpected error: " , sys.exc_info()[0]
         failure = failure + 1
         dt = time.time() - t0
-        print '-' + str(dt)
+        dts = "%.20f" % (time.time() - t0)
+        print '-' + dts
+        self.redis.zadd("bench::", ts, '-'+dts)
     #return success
 
 j = 0
 tTot = 0.0
 ta = []
 t0 = time.time()
-runcount = 10000
-nThreads = 20
+runcount = 20
+nThreads = 4
 for i in range(nThreads):
   msg_id = "notset"
   th = myThread(i, "Thread-"+str(i),0, bUrl, key, msg_id, token, project_id, host, port, runcount)
